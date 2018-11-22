@@ -36,7 +36,7 @@ exports.setVideo = function(value, success, error) {
     }
 };
 
-exports.receiveCall = function(from, id, success, error) {
+exports.receiveCall = function(from, id, supportsHold, success, error) {
     if(typeof id == "function") {
       error = success;
       success = id;
