@@ -1,4 +1,3 @@
-cordova.define("cordova-call.CordovaCall", function(require, exports, module) {
 var exec = require('cordova/exec');
 
 exports.setAppName = function(appName, success, error) {
@@ -96,5 +95,3 @@ exports.on = function(e, f) {
     };
     exec(success, error, "CordovaCall", "registerEvent", [e]);
 };
-
-});
