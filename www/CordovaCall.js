@@ -1,3 +1,4 @@
+cordova.define("cordova-call.CordovaCall", function(require, exports, module) {
 var exec = require('cordova/exec');
 
 exports.setAppName = function(appName, success, error) {
@@ -44,26 +45,27 @@ exports.receiveCall = function(from, id, supportsHold, success, error) {
     } else if(id) {
       id = id.toString();
     }
-    exec(success, error, "CordovaCall", "receiveCall", [from, id]);
+    exec(success, error, "CordovaCall", "receiveCall", [from, id, supportsHold]);
 };
 
-exports.sendCall = function(to, id, success, error) {
-    if(typeof id == "function") {
-      error = success;
-      success = id;
-      id = undefined;
-    } else if(id) {
-      id = id.toString();
-    }
-    exec(success, error, "CordovaCall", "sendCall", [to, id]);
+exports.sendCall = function(to, id, supportsHold, success, error) {
+  if(typeof id == "function") {
+    error = success;
+    success = id;
+    id = undefined;
+    supportsHold = undefined;
+  } else if(id) {
+    id = id.toString();
+  }
+  exec(success, error, "CordovaCall", "sendCall", [to, id, supportsHold]);
 };
 
-exports.connectCall = function(success, error) {
-    exec(success, error, "CordovaCall", "connectCall", []);
+exports.connectCall = function(uuid, success, error) {
+    exec(success, error, "CordovaCall", "connectCall", [uuid]);
 };
 
-exports.endCall = function(success, error) {
-    exec(success, error, "CordovaCall", "endCall", []);
+exports.endCall = function(uuid, success, error) {
+    exec(success, error, "CordovaCall", "endCall", [uuid]);
 };
 
 exports.mute = function(success, error) {
@@ -94,3 +96,5 @@ exports.on = function(e, f) {
     };
     exec(success, error, "CordovaCall", "registerEvent", [e]);
 };
+
+});

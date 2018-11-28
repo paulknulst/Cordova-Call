@@ -265,7 +265,7 @@
 {
 	NSUUID* callUUID = nil;
 	if (
-		[command.arguments objectAtIndex:0] != nil &&
+		[command.arguments objectAtIndex:0] != nil && [command.arguments objectAtIndex:0] != (id)[NSNull null] &&
 		(callUUID = [[NSUUID alloc] initWithUUIDString:[command.arguments objectAtIndex:0]]) != nil){
 		
 		CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:callUUID];
@@ -345,7 +345,7 @@
 	
 	[self.provider reportCallWithUUID:action.callUUID updated:callUpdate];
 	[action fulfill];
-	NSDictionary *callData = @{ @"callName":action.contactIdentifier, @"callId": action.handle.value, @"isVideo": action.video?@YES:@NO, @"message": @"sendCall event called successfully", @"callUUID": action.callUUID };
+	NSDictionary *callData = @{ @"callName":action.contactIdentifier, @"callId": action.handle.value, @"isVideo": action.video?@YES:@NO, @"message": @"sendCall event called successfully", @"callUUID": [action.callUUID UUIDString] };
 	for (id callbackId in self.callbackIds[@"sendCall"]) {
 		CDVPluginResult* pluginResult = nil;
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:callData];
@@ -385,18 +385,21 @@
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action
 {
 	NSArray<CXCall *> *calls = self.callController.callObserver.calls;
-	if([calls count] == 1) {
-		if(calls[0].hasConnected) {
+	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"UUID == %@", action.callUUID];
+	NSArray<CXCall *> *filteredArray = [calls filteredArrayUsingPredicate:predicate];
+	
+	if([filteredArray count] >= 1) {
+		if(filteredArray.firstObject.hasConnected) {
 			for (id callbackId in self.callbackIds[@"hangup"]) {
 				CDVPluginResult* pluginResult = nil;
-				pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"hangup event called successfully"];
+				pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];
 				[pluginResult setKeepCallbackAsBool:YES];
 				[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 			}
 		} else {
 			for (id callbackId in self.callbackIds[@"reject"]) {
 				CDVPluginResult* pluginResult = nil;
-				pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"reject event called successfully"];
+				pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];
 				[pluginResult setKeepCallbackAsBool:YES];
 				[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 			}
@@ -413,7 +416,7 @@
 	BOOL isMuted = action.muted;
 	for (id callbackId in self.callbackIds[isMuted?@"mute":@"unmute"]) {
 		CDVPluginResult* pluginResult = nil;
-		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:isMuted?@"mute event called successfully":@"unmute event called successfully"];
+		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 	}
@@ -481,6 +484,7 @@
 {
 	CDVPluginResult* pluginResult = nil;
 	AVAudioSession *sessionInstance = [AVAudioSession sharedInstance];
+	
 	if(sessionInstance.isInputGainSettable) {
 		BOOL success = [sessionInstance setInputGain:0.0 error:nil];
 		if(success) {
