@@ -250,7 +250,7 @@
 	CDVPluginResult* pluginResult = nil;
 	NSUUID* callUUID = nil;
 	if (
-		[command.arguments objectAtIndex:0] != nil &&
+		[command.arguments objectAtIndex:0] != nil && [command.arguments objectAtIndex:0] != (id)[NSNull null] &&
 		(callUUID = [[NSUUID alloc] initWithUUIDString:[command.arguments objectAtIndex:0]]) != nil){
 		[self.provider reportOutgoingCallWithUUID:callUUID connectedAtDate:nil];
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Call connected successfully"];
