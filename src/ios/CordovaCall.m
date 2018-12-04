@@ -312,18 +312,17 @@
 {
 	NSString* callID = notification.object[@"callId"];
 	NSString* callName = notification.object[@"callName"];
-	NSUUID *callUUID = [[NSUUID alloc] init];
-	CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypePhoneNumber value:callID];
-	CXStartCallAction *startCallAction = [[CXStartCallAction alloc] initWithCallUUID:callUUID handle:handle];
-	startCallAction.video = [notification.object[@"isVideo"] boolValue]?YES:NO;
-	startCallAction.contactIdentifier = callName;
-	CXTransaction *transaction = [[CXTransaction alloc] initWithAction:startCallAction];
-	[self.callController requestTransaction:transaction completion:^(NSError * _Nullable error) {
-		if (error == nil) {
-		} else {
-			NSLog(@"%@",[error localizedDescription]);
-		}
-	}];
+	
+	NSDictionary *callData = @{ @"callName": callName, @"callId": callID, @"message": @"sendCall event called successfully"};
+	for (id callbackId in self.callbackIds[@"sendCall"]) {
+		CDVPluginResult* pluginResult = nil;
+		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:callData];
+		[pluginResult setKeepCallbackAsBool:YES];
+		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+	}
+	if([self.callbackIds[@"sendCall"] count] == 0) {
+		self.pendingCallFromRecents = callData;
+	}
 }
 
 - (void)providerDidReset:(CXProvider *)provider
@@ -342,9 +341,8 @@
 	callUpdate.supportsUngrouping = NO;
 	callUpdate.supportsHolding = NO;
 	callUpdate.supportsDTMF = self.enableDTMF;
-	
+	//
 	[self.provider reportCallWithUUID:action.callUUID updated:callUpdate];
-	[action fulfill];
 	NSDictionary *callData = @{ @"callName":action.contactIdentifier, @"callId": action.handle.value, @"isVideo": action.video?@YES:@NO, @"message": @"sendCall event called successfully", @"callUUID": [action.callUUID UUIDString] };
 	for (id callbackId in self.callbackIds[@"sendCall"]) {
 		CDVPluginResult* pluginResult = nil;
@@ -355,6 +353,8 @@
 	if([self.callbackIds[@"sendCall"] count] == 0) {
 		self.pendingCallFromRecents = callData;
 	}
+	[action fulfill];
+	
 	//[action fail];
 }
 
@@ -414,9 +414,9 @@
 {
 	[action fulfill];
 	BOOL isMuted = action.muted;
+	
 	for (id callbackId in self.callbackIds[isMuted?@"mute":@"unmute"]) {
-		CDVPluginResult* pluginResult = nil;
-		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];
+		CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 	}
@@ -484,7 +484,6 @@
 {
 	CDVPluginResult* pluginResult = nil;
 	AVAudioSession *sessionInstance = [AVAudioSession sharedInstance];
-	
 	if(sessionInstance.isInputGainSettable) {
 		BOOL success = [sessionInstance setInputGain:0.0 error:nil];
 		if(success) {
