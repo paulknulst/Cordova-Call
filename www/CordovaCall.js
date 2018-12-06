@@ -67,6 +67,10 @@ exports.endCall = function(uuid, success, error) {
     exec(success, error, "CordovaCall", "endCall", [uuid]);
 };
 
+exports.setMuteCall = function(uuid, mute, success, error) {
+  exec(success, error, "CordovaCall", "setMuteCall", [uuid, mute])
+};
+
 exports.mute = function(success, error) {
     exec(success, error, "CordovaCall", "mute", []);
 };

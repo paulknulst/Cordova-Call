@@ -412,6 +412,7 @@
 
 - (void)provider:(CXProvider *)provider performSetMutedCallAction:(CXSetMutedCallAction *)action
 {
+	
 	[action fulfill];
 	BOOL isMuted = action.muted;
 	
@@ -477,6 +478,30 @@
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:digits];
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+	}
+}
+
+
+- (void)setMuteCall:(CDVInvokedUrlCommand*)command
+{
+	NSUUID* callUUID = nil;
+	BOOL mute;
+	if (
+		command.arguments.count > 1 &&
+		[command.arguments objectAtIndex:0] != nil && [command.arguments objectAtIndex:0] != (id)[NSNull null] &&
+		[command.arguments objectAtIndex:1] != nil && [command.arguments objectAtIndex:1] != (id)[NSNull null] &&
+		(callUUID = [[NSUUID alloc] initWithUUIDString:[command.arguments objectAtIndex:0]]) != nil){
+		mute = [[command.arguments objectAtIndex:1] boolValue];
+		CXTransaction *transaction = [[CXTransaction alloc] initWithAction:[[CXSetMutedCallAction alloc] initWithCallUUID:callUUID muted:mute]];
+		[self.callController requestTransaction:transaction completion:^(NSError * _Nullable error) {
+			if (error == nil) {
+				[self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Mute status set successfully"] callbackId:command.callbackId];
+			} else {
+				[self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"An error occurred setting mute"] callbackId:command.callbackId];
+			}
+		}];
+	} else {
+		[self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Mute call: Invalid number of arguments."] callbackId:command.callbackId];
 	}
 }
 
