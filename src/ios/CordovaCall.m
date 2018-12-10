@@ -233,7 +233,7 @@
 	}
 	
 	if (callName != nil && [callName length] > 0) {
-		CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:callId];
+		CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypePhoneNumber value:callId];
 		CXStartCallAction *startCallAction = [[CXStartCallAction alloc] initWithCallUUID:callUUID handle:handle];
 		startCallAction.contactIdentifier = callName;
 		startCallAction.video = self.hasVideo;
