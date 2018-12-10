@@ -12,6 +12,7 @@
 @property (nonatomic, strong) NSString *iconName;
 @property (nonatomic) BOOL shouldIncludeInRecents;
 @property (nonatomic, strong) NSMutableDictionary *callbackIds;
+@property (nonatomic, strong) NSMutableDictionary *receivedUUIDsToRemoteHandles;
 @property (nonatomic, strong) NSDictionary *pendingCallFromRecents;
 @property (nonatomic) BOOL monitorAudioRouteChange;
 @property (nonatomic) BOOL enableDTMF;
@@ -67,6 +68,9 @@
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"speakerOn"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"speakerOff"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"DTMF"];
+	
+	self.receivedUUIDsToRemoteHandles = [NSMutableDictionary dictionary];
+	
 	//allows user to make call from recents
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveCallFromRecents:) name:@"RecentsCallNotification" object:nil];
 	//detect Audio Route Changes to make speakerOn and speakerOff event handlers
@@ -189,8 +193,9 @@
 	
 	if (callName != nil && [callName length] > 0) {
 		CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypePhoneNumber value:callId];
+		self.receivedUUIDsToRemoteHandles[callUUID] = handle;
+		
 		CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
-		callUpdate.remoteHandle = handle;
 		callUpdate.hasVideo = self.hasVideo;
 		callUpdate.localizedCallerName = callName;
 		callUpdate.supportsGrouping = NO;
@@ -228,7 +233,7 @@
 	}
 	
 	if (callName != nil && [callName length] > 0) {
-		CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypePhoneNumber value:callId];
+		CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:callId];
 		CXStartCallAction *startCallAction = [[CXStartCallAction alloc] initWithCallUUID:callUUID handle:handle];
 		startCallAction.contactIdentifier = callName;
 		startCallAction.video = self.hasVideo;
@@ -387,6 +392,14 @@
 	NSArray<CXCall *> *calls = self.callController.callObserver.calls;
 	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"UUID == %@", action.callUUID];
 	NSArray<CXCall *> *filteredArray = [calls filteredArrayUsingPredicate:predicate];
+	
+	
+	if (self.receivedUUIDsToRemoteHandles[action.callUUID]) {
+		CXCallUpdate* update = [[CXCallUpdate alloc] init];
+		update.remoteHandle = self.receivedUUIDsToRemoteHandles[action.callUUID];
+		[self.provider reportCallWithUUID:action.callUUID updated:update];
+		[self.receivedUUIDsToRemoteHandles removeObjectForKey:action.UUID];
+	}
 	
 	if([filteredArray count] >= 1) {
 		if(filteredArray.firstObject.hasConnected) {
