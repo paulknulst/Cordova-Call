@@ -276,6 +276,15 @@
 		[command.arguments objectAtIndex:0] != nil && [command.arguments objectAtIndex:0] != (id)[NSNull null] &&
 		(callUUID = [[NSUUID alloc] initWithUUIDString:[command.arguments objectAtIndex:0]]) != nil){
 		
+		if (command.arguments.count > 1 &&
+			[command.arguments objectAtIndex:1] != nil &&
+			[command.arguments objectAtIndex:1] != (id)[NSNull null] &&
+			[command.arguments[1] boolValue]) {
+			[self setRecentsIntegration:NO];
+			
+			[NSTimer scheduledTimerWithTimeInterval:.03 target:self selector:@selector(activateRecentsIntegration) userInfo:nil repeats:NO];
+		}
+		
 		CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:callUUID];
 		CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
 		[self.callController requestTransaction:transaction completion:^(NSError * _Nullable error) {
@@ -300,6 +309,15 @@
 	} else {
 		[self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"No calls found."] callbackId:command.callbackId];
 	}
+}
+
+- (void) activateRecentsIntegration {
+	[self setRecentsIntegration:YES];
+}
+
+- (void) setRecentsIntegration:(BOOL) active {
+	self.shouldIncludeInRecents = active;
+	[self updateProviderConfig];
 }
 
 - (void)registerEvent:(CDVInvokedUrlCommand*)command;
