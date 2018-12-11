@@ -57,7 +57,7 @@
 	[self.provider setDelegate:self queue:nil];
 	self.callController = [[CXCallController alloc] init];
 	//initialize callback dictionary
-	self.callbackIds = [[NSMutableDictionary alloc]initWithCapacity:5];
+	self.callbackIds = [[NSMutableDictionary alloc] initWithCapacity:12];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"answer"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"reject"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"hangup"];
@@ -68,6 +68,9 @@
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"speakerOn"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"speakerOff"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"DTMF"];
+	[self.callbackIds setObject:[NSMutableArray array] forKey:@"hold"];
+	[self.callbackIds setObject:[NSMutableArray array] forKey:@"resume"];
+	
 	
 	self.receivedUUIDsToRemoteHandles = [NSMutableDictionary dictionary];
 	
@@ -344,7 +347,7 @@
 	callUpdate.localizedCallerName = action.contactIdentifier;
 	callUpdate.supportsGrouping = NO;
 	callUpdate.supportsUngrouping = NO;
-	callUpdate.supportsHolding = NO;
+	callUpdate.supportsHolding = YES;
 	callUpdate.supportsDTMF = self.enableDTMF;
 	//
 	[self.provider reportCallWithUUID:action.callUUID updated:callUpdate];
@@ -372,6 +375,16 @@
 - (void)provider:(CXProvider *)provider didDeactivateAudioSession:(AVAudioSession *)audioSession
 {
 	NSLog(@"deactivated audio");
+}
+
+- (void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action {
+	NSArray* callbacks = action.onHold ? self.callbackIds[@"hold"] : self.callbackIds[@"resume"];
+	
+	for (id callbackId in callbacks) {
+		CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];;
+		[pluginResult setKeepCallbackAsBool:YES];
+		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+	}
 }
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action
