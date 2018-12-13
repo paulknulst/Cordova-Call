@@ -63,8 +63,13 @@ exports.connectCall = function(uuid, success, error) {
     exec(success, error, "CordovaCall", "connectCall", [uuid]);
 };
 
-exports.endCall = function(uuid, success, error) {
-    exec(success, error, "CordovaCall", "endCall", [uuid]);
+exports.endCall = function(uuid, acceptedElsewhere,  success, error) {
+  if(typeof acceptedElsewhere == "function") {
+    error = success;
+    success = acceptedElsewhere;
+    acceptedElsewhere = undefined;
+  }
+  exec(success, error, "CordovaCall", "endCall", [uuid, acceptedElsewhere]);
 };
 
 exports.setMuteCall = function(uuid, mute, success, error) {
