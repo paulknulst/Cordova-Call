@@ -44,7 +44,6 @@
 	CXProviderConfiguration *providerConfiguration;
 	self.applicationName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
 	providerConfiguration = [[CXProviderConfiguration alloc] initWithLocalizedName:self.applicationName];
-	providerConfiguration.maximumCallGroups = 1;
 	providerConfiguration.maximumCallsPerCallGroup = 1;
 	NSMutableSet *handleTypes = [[NSMutableSet alloc] init];
 	[handleTypes addObject:@(CXHandleTypePhoneNumber)];
@@ -83,7 +82,6 @@
 - (void)updateProviderConfig {
 	CXProviderConfiguration *providerConfiguration;
 	providerConfiguration = [[CXProviderConfiguration alloc] initWithLocalizedName: self.applicationName];
-	providerConfiguration.maximumCallGroups = 1;
 	providerConfiguration.maximumCallsPerCallGroup = 1;
 	if(self.ringtoneName != nil) {
 		providerConfiguration.ringtoneSound = self.ringtoneName;
@@ -403,6 +401,8 @@
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 	}
+	
+	[action fulfill];
 }
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action
