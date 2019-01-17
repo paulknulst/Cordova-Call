@@ -337,7 +337,7 @@
 	NSString* callID = notification.object[@"callId"];
 	NSString* callName = notification.object[@"callName"];
 	
-	NSDictionary *callData = @{ @"callName": callName, @"callId": callID, @"message": @"sendCall event called successfully"};
+	NSDictionary *callData = @{ @"callName": callName, @"callId": callID, @"message": @"sendCall event called successfully" };
 	for (id callbackId in self.callbackIds[@"sendCall"]) {
 		CDVPluginResult* pluginResult = nil;
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:callData];
@@ -408,14 +408,13 @@
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action
 {
 	[self setupAudioSession];
-	[action fulfill];
 	for (id callbackId in self.callbackIds[@"answer"]) {
 		CDVPluginResult* pluginResult = nil;
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 	}
-	//[action fail];
+	[action fulfill];
 }
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action
@@ -423,7 +422,6 @@
 	NSArray<CXCall *> *calls = self.callController.callObserver.calls;
 	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"UUID == %@", action.callUUID];
 	NSArray<CXCall *> *filteredArray = [calls filteredArrayUsingPredicate:predicate];
-	
 	
 	if (self.receivedUUIDsToRemoteHandles[action.callUUID]) {
 		CXCallUpdate* update = [[CXCallUpdate alloc] init];
@@ -451,13 +449,10 @@
 	}
 	self.monitorAudioRouteChange = NO;
 	[action fulfill];
-	//[action fail];
 }
 
 - (void)provider:(CXProvider *)provider performSetMutedCallAction:(CXSetMutedCallAction *)action
 {
-	
-	[action fulfill];
 	BOOL isMuted = action.muted;
 	
 	for (id callbackId in self.callbackIds[isMuted?@"mute":@"unmute"]) {
@@ -465,7 +460,7 @@
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 	}
-	//[action fail];
+	[action fulfill];
 }
 
 - (void)setupAudioSession
@@ -477,6 +472,7 @@
 		NSTimeInterval bufferDuration = .005;
 		[sessionInstance setPreferredIOBufferDuration:bufferDuration error:nil];
 		[sessionInstance setPreferredSampleRate:44100 error:nil];
+		
 		NSLog(@"Configuring Audio");
 	}
 	@catch (NSException *exception) {
@@ -516,13 +512,14 @@
 {
 	NSLog(@"DTMF Event");
 	NSString *digits = action.digits;
-	[action fulfill];
 	for (id callbackId in self.callbackIds[@"DTMF"]) {
 		CDVPluginResult* pluginResult = nil;
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:digits];
 		[pluginResult setKeepCallbackAsBool:YES];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 	}
+	
+	[action fulfill];
 }
 
 
@@ -635,7 +632,6 @@
 		}
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 	}
-	
 }
 
 @end
