@@ -17,6 +17,9 @@
 @property (nonatomic) BOOL monitorAudioRouteChange;
 @property (nonatomic) BOOL enableDTMF;
 
+@property (nonatomic) BOOL backgroundState;
+
+
 - (void)updateProviderConfig;
 - (void)setAppName:(CDVInvokedUrlCommand*)command;
 - (void)setIcon:(CDVInvokedUrlCommand*)command;
@@ -69,7 +72,8 @@
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"DTMF"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"hold"];
 	[self.callbackIds setObject:[NSMutableArray array] forKey:@"resume"];
-	
+	[self.callbackIds setObject:[NSMutableArray array] forKey:@"applicateStateIsBackground"];
+
 	
 	self.receivedUUIDsToRemoteHandles = [NSMutableDictionary dictionary];
 	
@@ -77,6 +81,24 @@
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveCallFromRecents:) name:@"RecentsCallNotification" object:nil];
 	//detect Audio Route Changes to make speakerOn and speakerOff event handlers
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioRouteChange:) name:AVAudioSessionRouteChangeNotification object:nil];
+	
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleBackgroundStateChange:) name:@"com.nfon.applicationstate.isBackground" object:nil];
+}
+
+- (void) handleBackgroundStateChange:(NSNumber*) inBackground {
+	self.backgroundState = [inBackground boolValue];
+	
+	for (id callbackId in self.callbackIds[@"applicationStateIsBackground"]) {
+		CDVPluginResult* pluginResult = nil;
+		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:self.backgroundState];
+		[pluginResult setKeepCallbackAsBool:YES];
+		[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+	}
+}
+
+- (void) getApplicationState:(CDVInvokedUrlCommand *)command
+{
+	[self.commandDelegate sendPluginResult: [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:self.backgroundState] callbackId:command.callbackId];
 }
 
 - (void)updateProviderConfig {
@@ -395,7 +417,7 @@
 
 - (void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action {
 	NSArray* callbacks = action.onHold ? self.callbackIds[@"hold"] : self.callbackIds[@"resume"];
-	
+
 	for (id callbackId in callbacks) {
 		CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[action.callUUID UUIDString]];;
 		[pluginResult setKeepCallbackAsBool:YES];
@@ -447,6 +469,8 @@
 			}
 		}
 	}
+	
+	
 	self.monitorAudioRouteChange = NO;
 	[action fulfill];
 }
