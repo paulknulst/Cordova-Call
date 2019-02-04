@@ -4,6 +4,10 @@ exports.setAppName = function(appName, success, error) {
     exec(success, error, "CordovaCall", "setAppName", [appName]);
 };
 
+exports.getApplicationState = function(success, error) {
+  exec(success, error, "CordovaCall", "getApplicationState");
+};
+
 exports.setIcon = function(iconName, success, error) {
     exec(success, error, "CordovaCall", "setIcon", [iconName]);
 };
