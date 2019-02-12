@@ -163,7 +163,8 @@ public class MyConnectionService extends ConnectionService {
               }
             }
         };
-        connection.setAddress(Uri.parse(request.getExtras().getString("to")), TelecomManager.PRESENTATION_ALLOWED);
+        connection.setConnectionProperties(Connection.PROPERTY_IS_EXTERNAL_CALL);
+        connection.setAddress(request.getAddress(), TelecomManager.PRESENTATION_ALLOWED);
         Icon icon = CordovaCall.getIcon();
         if(icon != null) {
             StatusHints statusHints = new StatusHints((CharSequence)"", icon, new Bundle());
@@ -172,16 +173,23 @@ public class MyConnectionService extends ConnectionService {
         connection.setDialing();
         conn = connection;
         ArrayList<CallbackContext> callbackContexts = CordovaCall.getCallbackContexts().get("sendCall");
-        if(callbackContexts != null) {
-            for (final CallbackContext callbackContext : callbackContexts) {
-                CordovaCall.getCordova().getThreadPool().execute(new Runnable() {
-                    public void run() {
-                        PluginResult result = new PluginResult(PluginResult.Status.OK, "sendCall event called successfully");
-                        result.setKeepCallback(true);
-                        callbackContext.sendPluginResult(result);
-                    }
-                });
+        try {
+          final JSONObject information = new JSONObject();
+          information.put("callId", request.getAddress());
+
+            if(callbackContexts != null) {
+                for (final CallbackContext callbackContext : callbackContexts) {
+                    CordovaCall.getCordova().getThreadPool().execute(new Runnable() {
+                        public void run() {
+                            PluginResult result = new PluginResult(PluginResult.Status.OK, information);
+                            result.setKeepCallback(true);
+                            callbackContext.sendPluginResult(result);
+                        }
+                    });
+                }
             }
+        } catch (JSONException e) {
+          Log.e(TAG, e.getMessage());
         }
         return connection;
     }
