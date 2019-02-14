@@ -3,6 +3,7 @@ package com.dmarc.cordovacall;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
 import org.json.JSONObject;
+import org.json.JSONException;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
 import android.os.Bundle;
